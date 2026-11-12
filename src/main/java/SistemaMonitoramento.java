@@ -2,6 +2,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.io.IOException;
 
 import dominio.Alerta;
 import dominio.DadosTerritorio;
@@ -16,12 +17,14 @@ import excecao.FonteIndisponivelException;
 import persistencia.AlertaDAO;
 import persistencia.ConexaoBanco;
 import persistencia.MedicaoDAO;
+import persistencia.ExportadorCSV;
 
 public class SistemaMonitoramento {
 
     private static Scanner scanner = new Scanner(System.in);
     private static MedicaoDAO medicaoDAO = new MedicaoDAO();
     private static AlertaDAO alertaDAO = new AlertaDAO();
+    private static ExportadorCSV exportadorCSV = new ExportadorCSV();
     private static List<EstacaoMonitoramento> estacoes = new ArrayList<>();
     private static DadosTerritorio dadosTerritorio;
 
@@ -147,9 +150,16 @@ public class SistemaMonitoramento {
 
                 if (historico.isEmpty()) {
                     System.out.println("Nenhuma medição de " + tipo + " gravada ainda.");
+                    return;
                 }
                 for (Medicao medicao : historico) {
                     System.out.println(medicao);
+                }
+
+                System.out.print("Deseja exportar esse histórico para CSV? (s/n): ");
+                String resposta = scanner.nextLine().trim();
+                if (resposta.equalsIgnoreCase("s")) {
+                    exportarCSV(historico, tipo);
                 }
             } else if (escolha == 2) {
                 List<Alerta> alertas = alertaDAO.listarTodos();
@@ -165,6 +175,16 @@ public class SistemaMonitoramento {
             }
         } catch (SQLException e) {
             System.out.println("Erro ao consultar o histórico no banco: " + e.getMessage());
+        }
+    }
+    
+    private static void exportarCSV(List<Medicao> historico, String tipo) {
+        String nomeArquivo = "historico_" + tipo + ".csv";
+        try {
+            exportadorCSV.exportarMedicoes(historico, nomeArquivo);
+            System.out.println("Histórico exportado para o arquivo " + nomeArquivo);
+        } catch (IOException e) {
+            System.out.println("Não foi possível exportar o CSV: " + e.getMessage());
         }
     }
 

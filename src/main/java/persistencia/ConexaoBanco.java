@@ -16,29 +16,23 @@ public class ConexaoBanco {
     }
 
     public static void criarTabelas() throws SQLException {
-        String sqlMedicao = """
-                CREATE TABLE IF NOT EXISTS medicao (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    tipo_sensor VARCHAR(30) NOT NULL,
-                    unidade VARCHAR(10) NOT NULL,
-                    regiao VARCHAR(50) NOT NULL,
-                    valor DOUBLE NOT NULL,
-                    data_hora TIMESTAMP NOT NULL
-                )
-                """;
+        String sqlMedicao = "CREATE TABLE IF NOT EXISTS medicao ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "tipo_sensor VARCHAR(30) NOT NULL, "
+                + "unidade VARCHAR(10) NOT NULL, "
+                + "regiao VARCHAR(50) NOT NULL, "
+                + "valor DOUBLE NOT NULL, "
+                + "data_hora TIMESTAMP NOT NULL)";
 
-        String sqlAlerta = """
-                CREATE TABLE IF NOT EXISTS alerta (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    tipo_sensor VARCHAR(30) NOT NULL,
-                    regiao VARCHAR(50) NOT NULL,
-                    nivel VARCHAR(10) NOT NULL,
-                    valor_previsto DOUBLE NOT NULL,
-                    limite DOUBLE NOT NULL,
-                    explicacao VARCHAR(500) NOT NULL,
-                    data_hora TIMESTAMP NOT NULL
-                )
-                """;
+        String sqlAlerta = "CREATE TABLE IF NOT EXISTS alerta ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "tipo_sensor VARCHAR(30) NOT NULL, "
+                + "regiao VARCHAR(50) NOT NULL, "
+                + "nivel VARCHAR(10) NOT NULL, "
+                + "valor_previsto DOUBLE NOT NULL, "
+                + "limite DOUBLE NOT NULL, "
+                + "explicacao VARCHAR(500) NOT NULL, "
+                + "data_hora TIMESTAMP NOT NULL)";
 
         try (Connection conexao = getConexao();
                 PreparedStatement psMedicao = conexao.prepareStatement(sqlMedicao);
