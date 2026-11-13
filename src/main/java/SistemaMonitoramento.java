@@ -5,6 +5,9 @@ import java.util.Scanner;
 import java.io.IOException;
 
 import dominio.Alerta;
+import dominio.EstrategiaPrevisao;
+import servico.FabricaPrevisao;
+import servico.ServicoMonitoramento;
 import dominio.DadosTerritorio;
 import dominio.EstacaoMonitoramento;
 import dominio.Medicao;
@@ -26,6 +29,8 @@ public class SistemaMonitoramento {
     private static MedicaoDAO medicaoDAO = new MedicaoDAO();
     private static AlertaDAO alertaDAO = new AlertaDAO();
     private static ExportadorCSV exportadorCSV = new ExportadorCSV();
+    private static FabricaPrevisao fabricaPrevisao = new FabricaPrevisao();
+    private static ServicoMonitoramento servico = new ServicoMonitoramento(medicaoDAO, alertaDAO, fabricaPrevisao);
     private static List<EstacaoMonitoramento> estacoes = new ArrayList<>();
     private static DadosTerritorio dadosTerritorio;
 
@@ -51,7 +56,7 @@ public class SistemaMonitoramento {
                     verificarSensores();
                     break;
                 case 2:
-                    System.out.println("Previsões: em construção.");
+                    rodarPrevisoes();
                     break;
                 case 3:
                     verHistorico();
@@ -60,7 +65,7 @@ public class SistemaMonitoramento {
                     gerenciarDadosTerritorio();
                     break;
                 case 5:
-                    System.out.println("Status completo: em construção.");
+                    mostrarStatusCompleto();
                     break;
                 case 0:
                     System.out.println("Encerrando o sistema.");
@@ -117,6 +122,70 @@ public class SistemaMonitoramento {
 
             estacao.verificarStatus();
             System.out.println("  Status da estação: " + estacao.getStatus());
+        }
+    }
+    private static void rodarPrevisoes() {
+        List<String> tipos = fabricaPrevisao.getTiposDisponiveis();
+
+        System.out.println();
+        for (int i = 0; i < tipos.size(); i++) {
+            EstrategiaPrevisao estrategia = fabricaPrevisao.criar(tipos.get(i));
+            System.out.println((i + 1) + " - " + estrategia.getNome() + " (" + estrategia.getDescricao() + ")");
+        }
+        System.out.print("Qual estratégia? ");
+        int numero = lerInteiro();
+
+        if (numero < 1 || numero > tipos.size()) {
+            System.out.println("Estratégia inválida.");
+            return;
+        }
+        String tipoEstrategia = tipos.get(numero - 1);
+
+        for (EstacaoMonitoramento estacao : estacoes) {
+            System.out.println();
+            for (Sensor sensor : estacao.getSensores()) {
+                try {
+                    System.out.println(servico.rodarPrevisao(tipoEstrategia, sensor.getTipo(), estacao.getRegiao()));
+                } catch (SQLException e) {
+                    System.out.println("Erro ao buscar o histórico de " + sensor.getTipo() + " na " + estacao.getRegiao()
+                            + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private static void mostrarStatusCompleto() {
+        System.out.println();
+        System.out.println("===== STATUS COMPLETO =====");
+        System.out.println("Território: " + dadosTerritorio.getNome() + " | População: " + dadosTerritorio.getPopulacao());
+        System.out.println("Limites: temperatura " + dadosTerritorio.getLimiteTemperatura() + " °C | consumo "
+                + dadosTerritorio.getLimiteConsumoEnergia() + " kW | carga da rede " + dadosTerritorio.getLimiteCargaRede()
+                + " %");
+
+        System.out.println();
+        System.out.println("Estações:");
+        for (EstacaoMonitoramento estacao : estacoes) {
+            estacao.verificarStatus();
+            System.out.println("  " + estacao.getNome() + " - " + estacao.getRegiao() + ": " + estacao.getStatus());
+        }
+
+        try {
+            System.out.println();
+            System.out.println("Medições gravadas no banco:");
+            for (Sensor sensor : estacoes.get(0).getSensores()) {
+                int total = medicaoDAO.buscarHistoricoPorSensor(sensor.getTipo()).size();
+                System.out.println("  " + sensor.getTipo() + ": " + total);
+            }
+
+            List<Alerta> alertas = alertaDAO.listarTodos();
+            System.out.println();
+            System.out.println("Alertas emitidos: " + alertas.size());
+            int quantidade = Math.min(3, alertas.size());
+            for (int i = 0; i < quantidade; i++) {
+                System.out.println("  " + alertas.get(i));
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao consultar o banco: " + e.getMessage());
         }
     }
 
