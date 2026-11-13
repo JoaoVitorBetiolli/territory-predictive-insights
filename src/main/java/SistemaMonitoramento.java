@@ -18,6 +18,7 @@ import persistencia.AlertaDAO;
 import persistencia.ConexaoBanco;
 import persistencia.MedicaoDAO;
 import persistencia.ExportadorCSV;
+import servico.ConfiguracaoSistema;
 
 public class SistemaMonitoramento {
 
@@ -36,12 +37,7 @@ public class SistemaMonitoramento {
             return;
         }
 
-        try {
-            dadosTerritorio = new DadosTerritorio("Território Monitorado", 45000);
-        } catch (DadosInvalidosException e) {
-            System.out.println("Dados iniciais do território inválidos: " + e.getMessage());
-            return;
-        }
+        dadosTerritorio = ConfiguracaoSistema.getInstancia().getDadosTerritorio();
 
         criarEstacoes();
 
